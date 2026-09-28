@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>せせらぎのロッジ Web見本</title>
+<meta name="description" content="VRChat ワールド「せせらぎのロッジ」を、ブラウザで見て回れる見本です。">
+<meta property="og:title" content="せせらぎのロッジ Web見本">
+<meta property="og:description" content="川辺の森に建つ、焚き火と天の川のロッジ。ブラウザで見て回れます。">
+<meta property="og:image" content="thumb.jpg">
+<link rel="icon" href="favicon.png">
+<style>
+  :root {
+    --bar: #282828;
+    --panel: #383838;
+    --panel-head: #2f2f2f;
+    --btn: #4a4a4a;
+    --btn-hover: #555;
+    --line: #1a1a1a;
+    --text: #d2d2d2;
+    --sub: #9a9a9a;
+    --sel: #2c5d87;
+    --sel-text: #fff;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: #1e1e1e; color: var(--text); overflow: hidden;
+    font: 12px/1.4 "Segoe UI", "Hiragino Sans", "Yu Gothic UI", "Meiryo", system-ui, sans-serif; -webkit-tap-highlight-color: transparent; }
+  canvas { display: block; width: 100vw; height: 100vh; touch-action: none; cursor: default; }
+
+  /* 上のツールバー */
+  .toolbar { position: fixed; top: 0; left: 0; right: 0; height: 32px; display: flex; align-items: center; gap: 10px;
+    padding: 0 8px; background: var(--bar); border-bottom: 1px solid var(--line); }
+  .toolbar .name { font-weight: 600; color: #e6e6e6; white-space: nowrap; }
+  .toolbar .name span { font-weight: 400; color: var(--sub); margin-left: 6px; }
+  .toolbar .spacer { flex: 1; }
+  .toolbar a { color: var(--sub); text-decoration: none; white-space: nowrap; padding: 3px 6px; border-radius: 2px; }
+  .toolbar a:hover { color: var(--text); background: var(--btn); }
+
+  /* 並んだボタン（Unity のツールバー風） */
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 3px; overflow: hidden; background: var(--btn); }
+  .seg button { font: inherit; color: var(--text); background: var(--btn); border: 0; border-right: 1px solid #333;
+    padding: 3px 10px; height: 22px; cursor: pointer; white-space: nowrap; }
+  .seg button:last-child { border-right: 0; }
+  .seg button:hover { background: var(--btn-hover); }
+  .seg button.on { background: var(--sel); color: var(--sel-text); }
+  .views-wrap { overflow-x: auto; scrollbar-width: none; min-width: 0; }
+  .views-wrap::-webkit-scrollbar { display: none; }
+
+  /* 右下のパネル（インスペクター風） */
+  .panel { position: fixed; right: 8px; bottom: 8px; width: 236px; background: var(--panel); border: 1px solid var(--line); border-radius: 3px; }
+  .panel .head { padding: 4px 8px; background: var(--panel-head); border-bottom: 1px solid var(--line); font-weight: 600; color: #e6e6e6; }
+  .panel .row { display: flex; align-items: center; justify-content: space-between; padding: 6px 8px; gap: 8px; }
+  .panel .row + .row { border-top: 1px solid #303030; }
+  .panel label { color: var(--text); }
+  .check { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; user-select: none; }
+  .check i { width: 14px; height: 14px; border: 1px solid #1b1b1b; background: #2a2a2a; border-radius: 2px; display: grid; place-items: center; }
+  .check.on i::after { content: ""; width: 8px; height: 4px; border: solid #fff; border-width: 0 0 2px 2px; transform: rotate(-45deg) translate(1px, -1px); }
+  .check.on i { background: var(--sel); border-color: #1f4466; }
+
+  .hint { position: fixed; left: 8px; bottom: 8px; color: var(--sub); background: rgba(40,40,40,.85); border: 1px solid var(--line);
+    padding: 4px 8px; border-radius: 3px; transition: opacity .6s; pointer-events: none; }
+
+  .loading { position: fixed; inset: 0; display: grid; place-items: center; background: #1e1e1e; z-index: 10; transition: opacity .5s; }
+  .loading .box { width: 240px; }
+  .loading .t { color: #e6e6e6; font-weight: 600; margin-bottom: 8px; }
+  .meter { height: 4px; background: #2a2a2a; border: 1px solid var(--line); }
+  .meter i { display: block; height: 100%; width: 0; background: var(--sel); transition: width .15s; }
+  .loading p { color: var(--sub); margin: 6px 0 0; }
+
+  @media (max-width: 760px) {
+    .toolbar .name span, .toolbar a { display: none; }
+    .panel { left: 8px; right: 8px; width: auto; }
+    .hint { display: none; }
+  }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+
+<div class="loading" id="loading">
+  <div class="box">
+    <div class="t">せせらぎのロッジ</div>
+    <div class="meter"><i id="meter"></i></div>
+    <p id="loadText">読み込んでいます…</p>
+  </div>
+</div>
+
+<div class="toolbar">
+  <div class="name">せせらぎのロッジ<span>Web見本</span></div>
+  <div class="views-wrap"><div class="seg" id="views"></div></div>
+  <div class="spacer"></div>
+  <a href="https://raishop0.booth.pm/items/8914108" target="_blank" rel="noopener">BOOTH</a>
+</div>
+
+<div class="panel">
+  <div class="head">設定</div>
+  <div class="row"><label>音（川・森・焚き火）</label><span class="check" id="sound"><i></i></span></div>
+</div>
+
+<div class="hint" id="hint">ドラッグ：見回す　W A S D：移動　Q E：上下　ホイール：前後</div>
+
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js" } }
+</script>
+<script type="module" src="viewer.js"></script>
+</body>
+</html>
